@@ -406,3 +406,41 @@ cd /etc/postgresql/12/main
 sudo nano pg_hba.conf
 
 ```
+
+Then, go to the bottom of the file you just played and edit these lines
+- if scroll didn’t work you can use keyboard buttons to scroll down
+
+--------CHANGE peer, md5, md5 to trust-------------
+
+```
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     peer
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+
+```
+
+End result
+
+```
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     trust
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            trust
+# IPv6 local connections:
+host    all             all             ::1/128                 trust
+
+```
+
+Now you need to reboot the machine to make it work 
+```
+sudo reboot
+```
+
+DONE
