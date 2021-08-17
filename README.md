@@ -115,12 +115,12 @@ scp -i [path to pem file] [path to yelp.pgsql] username@[server-ip]:[directory t
 In this example the pem file and yelp.gsql file are located in the current directory and my server ip is `1.1.1.1` and the username is `ubuntu`
 
 ```
-scp -i yelp.pem yelp.pgsql ubuntu@1.1.1.1:/home/ubuntu/
+scp -i restaurants.pem yelp.pgsql ubuntu@1.1.1.1:/home/ubuntu/
 ```
 
 Login to the production server and create a database called `yelp`
 ```
-ubuntu@ip-172-31-20-1:~$ psql -d yelp
+ubuntu@ip-172-31-20-1:~$ psql -d postgres
 postgres=# create database yelp;
 CREATE DATABASE
 ```
@@ -138,49 +138,25 @@ psql (12.4 (Ubuntu 12.4-0ubuntu0.20.04.1))
 Type "help" for help.
 
 yelp=# \d
-                 List of relations
- Schema |        Name        |   Type   |  Owner
---------+--------------------+----------+----------
- public | restaurants        | table    | postgres
- public | restaurants_id_seq | sequence | postgres
- public | reviews            | table    | postgres
- public | reviews_id_seq     | sequence | postgres
-(4 rows)
 
-yelp=# select * from restaurants;
- id |           name           |    location     | price_range
-----+--------------------------+-----------------+-------------
-  2 | taco bell                | san fran        |           3
-  3 | taco bell                | New York        |           4
-  4 | cheesecake factory       | dallas          |           2
-  5 | cheesecake factory       | dallas          |           2
-  6 | cheesecake factory       | houston         |           2
- 10 | chiptle                  | virgini         |           1
- 11 | chiptle                  | virgini         |           1
- 13 | california pizza kitchen | vegas           |           1
-  1 | wendys                   | Lincoln         |           4
- 14 | california pizza kitchen | New mexico city |           3
-(10 rows)
-
-yelp=#
 ```
 
 
 ## 3. Copy github repo to sever
 
-Find a place to store your application code. In this example in the `ubuntu` home directory a new directory called `apps` will be created. Within the new `apps` directory another directory called `yelp-app`. Feel free to store your application code anywhere you see fit
+Find a place to store your application code. In this example in the `ubuntu` home directory a new directory called `apps` will be created. Within the new `apps` directory another directory called `restaurant-app`. Feel free to store your application code anywhere you see fit
 
 ```
 cd ~
 mkdir apps
 cd apps
-mkdir yelp-app
+mkdir restaurant-app
 ```
 
-move inside the `yelp-app` directory and clone the project repo
+move inside the `restaurant-app` directory and clone the project repo
 ```
-cd yelp-app
-git clone https://github.com/Sanjeev-Thiyagarajan/PERN-STACK-DEPLOYMENT.git .
+cd restaurant-app
+git clone https://github.com/hieunguyen0297/restaurant-app.git .
 ```
 
 ## 4. Install Node
@@ -200,7 +176,7 @@ sudo npm install pm2 -g
 ```
 Point pm2 to the location of the server.js file so it can start the app. We can add the `--name` flag to give the process a descriptive name
 ```
-pm2 start /home/ubuntu/apps/yelp-app/server/server.js --name yelp-app
+pm2 start /home/ubuntu/apps/restaurant-app/server/server.js --name restaurant-app
 ```
 
 Configure PM2 to automatically startup the process after a reboot
@@ -233,7 +209,7 @@ Install node_modules if it did not get pushed to GitHub
 ```
 npm install
 ```
-Navigate to the client directory in our App code and run `npm run build`. 
+Navigate to the client directory (if you put them inside client directory) in our App code and run `npm run build`. 
 
 This will create a finalized production ready version of our react frontent in directory called `build`. The build folder is what the NGINX server will be configured to serve.
 
@@ -273,33 +249,33 @@ default
 ```
 The default server block is what will be responsible for handling requests that don't match any other server blocks. Right now if you navigate to your server ip, you will see a pretty bland html page that says NGINX is installed. That is the `default` server block in action. 
 
-We will need to configure a new server block for our website. To do that let's create a new file in `/etc/nginx/sites-available/` directory. We can call this file whatever you want, but I recommend that you name it the same name as your domain name for your app. In this example my website will be hosted at *sanjeev.xyz* so I will also name the new file `sanjeev.xyz`. But instead of creating a brand new file, since most of the configs will be fairly similar to the `default` server block, I recommend copying the `default` config.
+We will need to configure a new server block for our website. To do that let's create a new file in `/etc/nginx/sites-available/` directory. We can call this file whatever you want, but I recommend that you name it the same name as your domain name for your app. In this example my website will be hosted at *restamgt.com* so I will also name the new file `restamgt.com`. But instead of creating a brand new file, since most of the configs will be fairly similar to the `default` server block, I recommend copying the `default` config.
 
 ```
 cd /etc/nginx/sites-available
-sudo cp default sanjeev.xyz
+sudo cp default restamgt.com
 ```
 
-open the new server block file `sanjeev.xyz` and modify it so it matches below:
+open the new server block file `restamgt.com` and modify it so it matches below:
 
 ```
 server {
         listen 80;
         listen [::]:80;
 
-         root /home/ubuntu/apps/yelp-app/client/build;
+         root /home/ubuntu/apps/restaurant-app/client/build;
 
         # Add index.php to the list if you are using PHP
         index index.html index.htm index.nginx-debian.html;
 
-        server_name sanjeev.xyz www.sanjeev.xyz;
+        server_name restamgt.com www.restamgt.com;
 
         location / {
                 try_files $uri /index.html;
         }
 
          location /api {
-            proxy_pass http://localhost:3001;
+            proxy_pass http://localhost:5000;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
@@ -314,11 +290,11 @@ server {
 
 The first two lines `listen 80` and `listen [::]:80;` tell nginx to listen for traffic on port 80 which is the default port for http traffic. Note that I removed the `default_server` keyword on these lines. If you want this server block to be the default then keep it in
 
-`root /home/ubuntu/apps/yelp-app/client/build;` tells nginx the path to the index.html file it will server. Here we passed the path to the build directory in our react app code. This directory has the finalized html/js/css files for the frontend.
+`root /home/ubuntu/apps/restaurant-app/client/build;` tells nginx the path to the index.html file it will server. Here we passed the path to the build directory in our react app code. This directory has the finalized html/js/css files for the frontend.
 
-`server_name sanjeev.xyz www.sanjeev.xyz;` tells nginx what domain names it should listen for. Make sure to replace this with your specific domains. If you don't have a domain then you can put the ip address of your ubuntu server.
+`server_name restamgt.com www.restamgt.com;` tells nginx what domain names it should listen for. Make sure to replace this with your specific domains. If you don't have a domain then you can put the ip address of your ubuntu server.
 
-The configuration block below is needed due to the fact that React is a Singe-Page-App. So if a user directly goes to a url that is not the root url like `https://sanjeev.xyz/restaurants/4` you will get a 404 cause NGINX has not been configured to handle any path ohter than the `/`. This config block tells nginx to redirect everything back to the `/` path so that react can then handle the routing.
+The configuration block below is needed due to the fact that React is a Singe-Page-App. So if a user directly goes to a url that is not the root url like `https://restamgt.com/restaurants/4` you will get a 404 cause NGINX has not been configured to handle any path ohter than the `/`. This config block tells nginx to redirect everything back to the `/` path so that react can then handle the routing.
 
 ```
         location / {
@@ -330,7 +306,7 @@ The last section is so that nginx can handle traffic destined to the backend. No
 
 **Enable the new site**
 ```
-sudo ln -s /etc/nginx/sites-available/sanjeev.xyz /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/restamgt.com /etc/nginx/sites-enabled/
 systemctl restart nginx
 ```
 
@@ -342,7 +318,7 @@ Create a file called `.env` in `/home/ubuntu/`. The file does not need to be nam
 Within the .env file paste all the required environment variables
 
 ```
-PORT=3001
+PORT=5000
 PGUSER=postgres
 PGHOST=localhost
 PGPASSWORD=password123
@@ -351,7 +327,7 @@ PGPORT=5432
 NODE_ENV=production
 ```
 
-You'll notice I also set `NODE_ENV=production`. Although its not required for this example project, it is common practice. For man other projects(depending on how the backend is setup) they may require this to be set in a production environment.
+You'll notice I also set `NODE_ENV=production`. Although its not required for this example project, it is common practice. For many other projects(depending on how the backend is setup) they may require this to be set in a production environment.
 
 
 In the `/home/ubuntu/.profile` add the following line to the bottom of the file
@@ -365,7 +341,7 @@ For these changes to take affect, close the current terminal session and open a 
 Verify that the environment variables are set by running the `printenv`
 
 ```
-# printenv
+# printenv | grep -i pg
 ```
 
 ## 9. Enable Firewall
