@@ -379,4 +379,30 @@ Get and install certificates using interactive prompt
 ```
 sudo certbot --nginx
 ```
+## Problem with PostgreSQL
+You might see error something like this: 
+```
+"error": "password authentication failed for the user in PostgreSQL"
+```
+Here is how to fix it
 
+Open Terminal and write this command in terminal
+```
+sudo editor /etc/postgresql/<postgresql version >/main/pg_hba.conf
+```
+
+OR from home directory /home/ubuntu
+
+```
+cd /etc/postgresql
+```
+
+Check version => type ls ; if version is 12 
+Then 
+
+```
+cd /etc/postgresql/12/main
+
+sudo nano pg_hba.conf
+
+```
