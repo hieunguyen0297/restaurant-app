@@ -2,6 +2,12 @@
 
 > Detailed step by step procedure to deploying PERN(Postgres, Express, React, Node) stack on Ubuntu 20.04 with NGINX and SSL
 
+# Connect to AWS Ubuntu machine
+Online your local machine type:
+```
+ssh -i [path to the .pem file] ubuntu@[ip4 public address]
+```
+
 ## 1. Install and Configure PostgreSQL
 
 Update packages
